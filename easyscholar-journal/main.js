@@ -212,4 +212,42 @@
       });
     });
   });
+  // 配置界面由插件自己显示（打开插件详情时，宿主调用本渲染函数）
+  SgelinPlugin.setConfigRenderer(function (container, api) {
+    var cfg = api.getConfig() || {};
+    container.innerHTML =
+      '<div class="plugin-field">' +
+      '  <label>easyScholar SecretKey</label>' +
+      '  <input type="password" id="esSecretKey" value="' + esc(cfg.secretKey || "") + '" placeholder="在 easyScholar 官网获取的 SecretKey">' +
+      '</div>' +
+      '<div class="plugin-field">' +
+      '  <label>直接显示的等级项数量（其余折叠到「更多…」）</label>' +
+      '  <input type="number" id="esMaxVisible" value="' + esc(cfg.maxVisible || "4") + '" placeholder="如 4">' +
+      '</div>' +
+      '<div class="plugin-config-tip">SecretKey 仅保存在本机插件目录（DPAPI 加密），不会上传到互联网或 git 仓库。</div>' +
+      '<button class="plugin-btn primary" id="esSaveBtn">保存</button>' +
+      '<span class="plugin-config-status" id="esConfigStatus"></span>';
+
+    document.getElementById("esSaveBtn").addEventListener("click", function () {
+      var values = {
+        secretKey: document.getElementById("esSecretKey").value,
+        maxVisible: document.getElementById("esMaxVisible").value || "4"
+      };
+      var status = document.getElementById("esConfigStatus");
+      api.saveConfig(values).then(function (res) {
+        if (res && res.ok) {
+          status.textContent = "✅ 已保存";
+          status.style.color = "#10b981";
+          api.refresh();
+        } else {
+          status.textContent = "❌ " + (res && res.error ? res.error : "保存失败");
+          status.style.color = "#ef4444";
+        }
+      }).catch(function () {
+        var s = document.getElementById("esConfigStatus");
+        s.textContent = "❌ 保存失败";
+        s.style.color = "#ef4444";
+      });
+    });
+  });
 })(SgelinPlugin);
