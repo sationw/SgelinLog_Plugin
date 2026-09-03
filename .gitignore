@@ -4,6 +4,9 @@
 # 本地打包脚本（不入库）
 pack.bat
 
+# 本地 git 提交消息临时文件（不入库）
+.git_commit_msg.txt
+
 # 系统文件
 Thumbs.db
 .DS_Store
