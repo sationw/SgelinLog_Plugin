@@ -2,32 +2,27 @@
 
 [SgelinLog](https://github.com/sationw/AI_Assistant_SgelinLog) 文献阅读器的官方插件仓库。
 
-本仓库存放 SgelinLog 的插件（`.zip` 插件包 + 源码），供用户下载安装，也供开发者参考实现自己的插件。
+本仓库面向**插件开发者**：说明如何为 SgelinLog 开发插件，并存放官方插件（每个插件一个子文件夹）。
 
-## 插件列表
+## 仓库结构
 
-| 插件 | 说明 | 安装包 |
-|---|---|---|
-| [easyScholar 期刊信息](./easyscholar-journal/) | 自动识别当前文献的期刊，调用 easyScholar API 获取期刊等级信息（中科院分区、影响因子、SCI 分区、是否 Top 等），显示在文献信息名称下方；查询结果本地缓存 | [easyscholar-journal.zip](./easyscholar-journal.zip) |
+```
+Plug_in/
+├── README.md                  ← 本文件：插件开发总说明（面向开发者）
+├── LICENSE                    ← MIT 开源协议
+├── easyscholar-journal/       ← 示例插件：easyScholar 期刊信息
+│   ├── manifest.json          ← 插件清单
+│   ├── main.js                ← 插件入口脚本
+│   ├── README.md              ← 该插件的说明（面向该插件的使用者/开发者）
+│   └── 使用说明.md            ← 该插件的用户使用说明
+└── ...（未来更多插件，一个插件一个子文件夹）
+```
 
-## 安装插件
-
-1. 打开 SgelinLog，点击顶部导航栏的「🧩 插件」按钮。
-2. 在弹出的插件列表窗口中，把下载的 `.zip` 插件包**拖入**上方的虚线框（或点击虚线框选择文件）。
-3. 安装成功后，插件会出现在下方列表中，可启用/禁用、删除、配置。
-
-## 开发插件
-
-- 插件开发文档：[README.md](./README.md)（本文件下方）
-- 插件设计原则：**插件适配软件**（而非软件适配插件），插件功能由插件本身实现，主程序只提供通用、最小化的宿主能力。
-
-## 开源协议
-
-本仓库采用 [MIT License](./LICENSE)。
+> 每个插件对应一个子文件夹，包含该插件的所有文件（manifest、脚本、资源）和对应的 README。主 README 只做总体说明。
 
 ---
 
-# SgelinLog 插件开发文档
+# SgelinLog 插件开发总说明
 
 > 面向插件开发者。本文档说明如何为 SgelinLog 开发一个插件。
 
@@ -137,42 +132,30 @@ SgelinPlugin.writeFile("cache.json", JSON.stringify(cache));
 
 > 主程序**不提供**「缓存」这类业务接口，只提供「读写插件数据目录文件」这一通用能力。插件自行决定存什么、怎么存（JSON、文本等）。
 
-## 五、完整示例：easyScholar 期刊信息插件
+## 五、开发一个插件的步骤
 
-见 [easyscholar-journal/](./easyscholar-journal/)：
+1. **创建插件目录**：在仓库下新建 `your-plugin/` 子文件夹。
+2. **编写 manifest.json**：声明 id、name、type、entry、permissions、config。
+3. **编写 main.js**：用 `SgelinPlugin` 桥接对象实现逻辑（如 `onRender` 钩子 + `setDetailBadge`）。
+4. **编写插件 README**：说明该插件的用途、配置、使用方式（面向该插件的使用者）。
+5. **打包**：把插件文件打成 `.zip`（含 manifest.json），供用户拖入软件安装。
+6. **提交到本仓库**：一个插件一个子文件夹。
 
-- `manifest.json`：声明 `literature-enhancer` 类型 + `secretKey` / `maxVisible` 配置项。
-- `main.js`：
-  1. `onRender` 钩子监听文献切换；
-  2. 取当前文献期刊名；
-  3. 先查本地缓存（`readFile("cache.json")`），命中直接显示；
-  4. 未命中调 easyScholar API（`httpGet`）；
-  5. 解析 `officialRank` / `customRank`，新结果写入缓存（`writeFile`）；
-  6. 默认显示中科院分区（sciUp）、影响因子（sciif）、SCI 分区（sci）、是否 Top（sciUpTop），其余折叠到「更多…」。
-- `使用说明.md`：面向用户的使用说明。
-
-打包：运行 `pack.bat` 生成 `easyscholar-journal.zip`，拖入软件「🧩 插件」弹窗即可安装。
-
-## 六、easyScholar API 参考
-
-- 接口：`https://www.easyscholar.cc/open/getPublicationRank`（GET）
-- 参数：`secretKey`（必填）、`publicationName`（必填，需 `encodeURIComponent`）
-- 返回：`{ code, msg, data }`，`code=200` 成功
-  - `data.officialRank.all`：官方数据集（缩写 → 等级），如 `sciUp`（中科院升级版分区）、`sciif`（影响因子）、`sci`（SCI分区）、`sciUpTop`（是否Top）等
-  - `data.customRank`：自定义数据集（`rankInfo` 缩写 + `rank` 等级）
-- 限速：每秒最多 2 次请求
-
-## 七、安装 / 卸载 / 配置
+## 六、安装 / 卸载 / 配置（用户侧）
 
 - **安装**：拖入 `.zip` 到「🧩 插件」弹窗的虚线框。
 - **卸载**：插件列表点 🗑 删除（移除插件目录）。
 - **启用/禁用**：插件列表点 ⏸/▶ 切换。
 - **配置**：插件列表点 ⚙️ 打开设置表单（由 manifest 的 `config` 定义）。
 
-## 八、开发建议
+## 七、开发建议
 
 1. **插件适配软件**：不要假设主程序内部结构，只依赖桥接对象 API。
 2. **最小权限**：`permissions` 只声明真正需要的。
 3. **自行持久化**：缓存、历史等数据用 `readFile` / `writeFile` 存到插件数据目录。
 4. **容错**：网络失败、无数据、配置缺失时给出友好提示（如 `setDetailBadge` 显示占位文案）。
-5. **限速**：外部 API 注意限速（如 easyScholar 每秒 2 次），用本地缓存减少重复请求。
+5. **限速**：外部 API 注意限速，用本地缓存减少重复请求。
+
+## 开源协议
+
+本仓库采用 [MIT License](./LICENSE)。

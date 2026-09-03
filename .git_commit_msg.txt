@@ -1,0 +1,1 @@
+重构插件仓库结构：主README面向开发者，插件子文件夹各自README，停止跟踪pack.bat
