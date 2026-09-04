@@ -1,24 +1,28 @@
 # SgelinLog 插件仓库
 
-[SgelinLog](https://github.com/sationw/AI_Assistant_SgelinLog) 文献阅读器的官方插件仓库。
+[SgelinLog](https://github.com/sationw/AI_Assistant_SgelinLog) 文献阅读器的官方插件仓库。这里提供**插件安装包（.zip）下载**，同时面向插件开发者说明如何为 SgelinLog 开发插件。
 
-本仓库面向**插件开发者**：说明如何为 SgelinLog 开发插件，并存放官方插件（每个插件一个子文件夹）。
+## 🧩 插件下载
+
+| 插件名 | 用途 / 功能 | 下载 |
+|---|---|---|
+| **easyScholar 期刊信息** | 自动识别当前文献的期刊，调用 easyScholar 查询并显示期刊等级（中科院分区 / 影响因子 / SCI 分区 / 是否 Top 等），结果本地缓存、减少重复请求。 | [⬇️ 下载 v1.0.0](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/easyscholar-journal/easyscholar-journal.zip) |
+
+> 下载后打开 SgelinLog → 点导航栏「🧩 插件」→ 把 `.zip` 拖入虚线框即可安装。使用说明见 [easyScholar 期刊信息插件](easyscholar-journal/README.md)。
 
 ## 仓库结构
 
 ```
 Plug_in/
-├── README.md                  ← 本文件：插件开发总说明（面向开发者）
-├── LICENSE                    ← MIT 开源协议
-├── easyscholar-journal/       ← 示例插件：easyScholar 期刊信息
-│   ├── manifest.json          ← 插件清单
-│   ├── main.js                ← 插件入口脚本
-│   ├── README.md              ← 该插件的说明（面向该插件的使用者/开发者）
-│   └── 使用说明.md            ← 该插件的用户使用说明
+├── README.md                    ← 本文件（含插件下载列表 + 插件开发总说明）
+├── LICENSE                      ← MIT 开源协议
+├── easyscholar-journal/         ← 示例插件：easyScholar 期刊信息
+│   ├── easyscholar-journal.zip  ← 插件安装包（下载后拖入软件即可安装）
+│   └── README.md                ← 该插件的说明
 └── ...（未来更多插件，一个插件一个子文件夹）
 ```
 
-> 每个插件对应一个子文件夹，包含该插件的所有文件（manifest、脚本、资源）和对应的 README。主 README 只做总体说明。
+> 本仓库**只分发每个插件的安装包（.zip）与说明（README.md）**。插件的源码（manifest.json / main.js 等）仅保存在本地用于打包与迭代，不随仓库发布；需要查看插件实现时，解压对应的 `.zip` 即可看到全部源码。
 
 ---
 
@@ -104,6 +108,8 @@ SgelinLog 插件是一个 **`.zip` 包**，内含：
 | `SgelinPlugin.writeFile(fileName, content)` | Promise | 写入插件数据目录下的文件，返回 `{ok}` |
 | `SgelinPlugin.setDetailBadge(html)` | void | 在文献详情页注入 HTML |
 | `SgelinPlugin.onRender(fn)` | void | 注册渲染钩子（每次切换文献时调用） |
+| `SgelinPlugin.saveConfig(values)` | Promise | 保存插件自身配置（key → value），供插件自渲染配置界面调用 |
+| `SgelinPlugin.setConfigRenderer(fn)` | void | 注册配置界面渲染函数 `fn(container, api)`（配置界面由插件自己显示，打开插件详情时宿主调用） |
 
 ### 安全约束
 

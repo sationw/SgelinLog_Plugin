@@ -24,7 +24,7 @@ easyScholar 接口需要通过 **SecretKey** 确认身份，首次使用前需�
 
 1. 在插件列表中，点击该插件右侧的「⚙️」设置按钮。
 2. 在「easyScholar SecretKey」一栏填入你的 SecretKey。
-   - SecretKey 在 easyScholar 官网（https://www.easyscholar.cc）获取，**无法更改，请勿透露给任何人**。
+   - SecretKey 在 [easyScholar 官网](https://www.easyscholar.cc) 获取（官网登录后进入个人中心可见），**无法更改，请勿透露给任何人**。
 3. 点击「保存」。
 
 > SecretKey 仅保存在本机插件目录（DPAPI 加密），不会上传到互联网或 git 仓库。

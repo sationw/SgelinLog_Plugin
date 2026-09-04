@@ -1,5 +1,7 @@
-# 构建产物（zip 插件包由 pack.bat 生成，不入库）
-*.zip
+# 插件源码与用户使用说明（仅本地用于打包迭代；仓库只分发 .zip 安装包 + README 说明）
+easyscholar-journal/main.js
+easyscholar-journal/manifest.json
+easyscholar-journal/使用说明.md
 
 # 本地打包脚本（不入库）
 pack.bat
