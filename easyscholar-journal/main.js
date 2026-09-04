@@ -45,6 +45,8 @@
 
   // 内存缓存（本次会话内避免重复请求）
   var memCache = {};
+  // 进行中的请求（key = 期刊名）：防止 onRender 连续触发时重复请求同一期刊
+  var inflight = {};
   // 本地持久化缓存文件名（插件自行维护，存于插件数据目录）
   var CACHE_FILE = "cache.json";
   // 本地缓存是否已加载（避免重复读文件）
@@ -187,7 +189,12 @@
       }
 
       var url = API + "?secretKey=" + encodeURIComponent(secretKey) + "&publicationName=" + encodeURIComponent(journal);
+      // 已有进行中的请求（如 onRender 被连续触发两次）→ 跳过，避免重复请求
+      if (inflight[journal]) return;
+      inflight[journal] = true;
+
       SgelinPlugin.httpGet(url).then(function (res) {
+        delete inflight[journal];
         if (!res.ok) {
           SgelinPlugin.setDetailBadge('<span class="plugin-rank-badge" style="opacity:.6">easyScholar：查询失败</span>');
           return;
@@ -208,6 +215,7 @@
         saveDiskCache();
         SgelinPlugin.setDetailBadge(buildBadgeHtml(items, maxVisible));
       }).catch(function () {
+        delete inflight[journal];
         SgelinPlugin.setDetailBadge('<span class="plugin-rank-badge" style="opacity:.6">easyScholar：网络错误</span>');
       });
     });
