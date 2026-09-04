@@ -6,9 +6,9 @@
 
 | 插件名 | 用途 / 功能 | 下载 |
 |---|---|---|
-| **easyScholar 期刊信息** | 自动识别当前文献的期刊，调用 easyScholar 查询并显示期刊等级（中科院分区 / 影响因子 / SCI 分区 / 是否 Top 等），结果本地缓存、减少重复请求。 | [⬇️ 下载 v1.0.0](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/easyscholar-journal/easyscholar-journal.zip) |
+| **easyScholar 期刊信息** | 自动识别当前文献的期刊，调用 easyScholar 查询并显示期刊等级（中科院分区 / 影响因子 / SCI 分区 / 是否 Top 等），结果本地缓存、减少重复请求。<br>[📖 查看插件说明](easyscholar-journal/README.md) | [⬇️ 下载 v1.0.0](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/easyscholar-journal/easyscholar-journal.zip) |
 
-> 下载后打开 SgelinLog → 点导航栏「🧩 插件」→ 把 `.zip` 拖入虚线框即可安装。使用说明见 [easyScholar 期刊信息插件](easyscholar-journal/README.md)。
+> 下载后打开 SgelinLog → 点导航栏「🧩 插件」→ 把 `.zip` 拖入虚线框即可安装。每个插件的详细说明见上表「用途 / 功能」列中的插件说明链接。
 
 ## 仓库结构
 
