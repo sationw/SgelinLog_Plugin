@@ -1,166 +1,235 @@
 # SgelinLog 插件仓库
 
-[SgelinLog](https://github.com/sationw/AI_Assistant_SgelinLog) 文献阅读器的官方插件仓库。这里提供**插件安装包（.zip）下载**，同时面向插件开发者说明如何为 SgelinLog 开发插件。
+[SgelinLog](https://github.com/sationw/AI_Assistant_SgelinLog) 的官方插件分发仓库。
 
-## 🧩 插件下载
+本仓库的插件目录**只提交可安装的 `.zip` 插件包**。插件源码、插件专属 README、用户使用说明和本地测试文件仅保存在开发者本机，不进入 Git。
 
-| 插件名 | 用途 / 功能 | 下载 |
-|---|---|---|
-| **easyScholar 期刊信息** | 自动识别当前文献的期刊，调用 easyScholar 查询并显示期刊等级（中科院分区 / 影响因子 / SCI 分区 / 是否 Top 等），结果本地缓存、减少重复请求。<br>[📖 查看插件说明](easyscholar-journal/README.md) | [⬇️ 下载 v1.0.0](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/easyscholar-journal/easyscholar-journal.zip) |
+## 插件列表
 
-> 下载后打开 SgelinLog → 点导航栏「🧩 插件」→ 把 `.zip` 拖入虚线框即可安装。每个插件的详细说明见上表「用途 / 功能」列中的插件说明链接。
+| 插件 | 类型 | 功能 | 下载 |
+|---|---|---|---|
+| MinerU PDF 解析 | `literature-enhancer`（V2.5.9 兼容） | PDF 转 Markdown、Agent/精准解析、缓存管理，并与 RaA 阅读流程共享缓存 | [下载 minerU.zip](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/minerU/minerU.zip) |
+| easyScholar 期刊信息 | `literature-enhancer` | 查询期刊分区、影响因子、SCI 分区和 Top 信息 | [下载 easyscholar-journal.zip](https://raw.githubusercontent.com/sationw/SgelinLog_Plugin/master/easyscholar-journal/easyscholar-journal.zip) |
+
+下载 zip 后打开 SgelinLog，进入导航栏「插件」，将 zip 拖入安装区域即可。
 
 ## 仓库结构
 
-```
+```text
 Plug_in/
-├── README.md                    ← 本文件（含插件下载列表 + 插件开发总说明）
-├── LICENSE                      ← MIT 开源协议
-├── easyscholar-journal/         ← 示例插件：easyScholar 期刊信息
-│   ├── easyscholar-journal.zip  ← 插件安装包（下载后拖入软件即可安装）
-│   └── README.md                ← 该插件的说明
-└── ...（未来更多插件，一个插件一个子文件夹）
+├── README.md
+├── LICENSE
+├── minerU/
+│   └── minerU.zip
+└── easyscholar-journal/
+    └── easyscholar-journal.zip
 ```
 
-> 本仓库**只分发每个插件的安装包（.zip）与说明（README.md）**。插件的源码（manifest.json / main.js 等）仅保存在本地用于打包与迭代，不随仓库发布；需要查看插件实现时，解压对应的 `.zip` 即可看到全部源码。
+本地开发者可以在上述目录暂存 `manifest.json`、`main.js`、插件说明和打包脚本，但这些文件由 `.gitignore` 排除。发布前只需更新对应 zip。
 
----
+## 一、插件通用模型
 
-# SgelinLog 插件开发总说明
+插件是一个 zip 包，至少包含 `manifest.json`；可以包含入口脚本、资源文件和本地数据模板。宿主负责安装、启用、禁用、删除、配置存储和能力门禁，插件只依赖公开桥接 API。
 
-> 面向插件开发者。本文档说明如何为 SgelinLog 开发一个插件。
+插件脚本目前在 WebView2 页面上下文加载。桥接 API 是能力限制，不是操作系统级沙箱；不要把插件安装为低风险代码执行环境。尤其是 `process` 型插件必须按高风险、受信插件处理。
 
-## 一、插件是什么
+插件类型由 `type` 决定挂载点，适配器由 `kind` 决定执行方式：
 
-SgelinLog 插件是一个 **`.zip` 包**，内含：
+| 类型/方式 | 用途 |
+|---|---|
+| `literature-enhancer` | 在文献详情页展示或增强信息 |
+| `pdf-parser` | 将 PDF 转换为统一 Markdown 解析结果 |
+| `assistant-tool` | 为 AI 助手提供受控工具（需单独实现宿主路由） |
+| `reader-panel` | 提供阅读器面板或交互视图 |
+| `api` | 宿主通过受限 HTTPS 代理调用远程服务 |
+| `process` | 宿主启动本地解析进程，属于高风险能力 |
 
-- `manifest.json`（必需）：插件清单，描述元数据、类型、入口、权限、可配置项。
-- `main.js`（可选）：入口脚本，实现插件逻辑。
-- 其它资源（可选）：图片、样式、数据文件等。
+新增类型必须先有宿主挂载点和测试，不能只在 manifest 中填写新字符串。
 
-安装后解压到 `user_data/plugins/<id>/`，由宿主（主程序）负责加载与调度。
+## 二、通用 manifest
 
-**核心设计原则**：
-
-> 主程序只依赖接口，插件只依赖接口。主程序通过接口调用插件而不关心其实现；插件通过接口使用宿主能力而不直接触碰内部对象。插件功能（如缓存、业务逻辑）应由**插件本身**实现，主程序只提供**通用、最小化**的宿主能力。
-
-## 二、manifest.json 结构
+下面是适用于普通插件的最小合法 JSON。JSON 文件中不要写注释。
 
 ```json
 {
-  "id": "easyscholar-journal",
-  "name": "easyScholar 期刊信息",
+  "schemaVersion": 1,
+  "minHostVersion": "2.5.9",
+  "id": "example-plugin",
+  "name": "示例插件",
   "version": "1.0.0",
-  "author": "SgelinLog",
-  "description": "……",
+  "author": "DeveloperName",
+  "description": "插件功能说明。",
   "type": "literature-enhancer",
   "entry": "main.js",
-  "permissions": ["network", "literature"],
+  "permissions": ["storage", "literature"],
   "config": [
-    { "key": "secretKey", "label": "easyScholar SecretKey", "type": "secret", "default": "" },
-    { "key": "maxVisible", "label": "直接显示的等级项数量", "type": "number", "default": "4" }
+    {
+      "key": "enabled",
+      "label": "启用功能",
+      "type": "boolean",
+      "default": "true"
+    }
   ]
 }
 ```
 
-### 字段说明
+字段规则：
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `id` | 是 | 唯一标识，仅允许字母、数字、`-`、`_`、`.`（防路径穿越） |
-| `name` | 是 | 显示名称 |
-| `version` | 否 | 版本号，默认 `1.0.0` |
-| `author` | 否 | 作者 |
-| `description` | 否 | 描述 |
-| `type` | 是 | 插件类型，决定挂载点（见下文） |
-| `entry` | 否 | 入口脚本文件名（相对插件目录） |
-| `permissions` | 否 | 声明能力：`network`（联网）、`literature`（文献） |
-| `config` | 否 | 可配置项定义，`type` 支持 `text` / `secret` / `number` / `boolean` |
+| `schemaVersion` | 建议 | manifest 契约版本；未知版本应拒绝安装 |
+| `minHostVersion` | 建议 | 插件要求的最低宿主版本 |
+| `id` | 是 | 仅允许字母、数字、`-`、`_`、`.` |
+| `name` | 是 | 用户看到的名称 |
+| `version` | 否 | 默认 `1.0.0`，建议使用语义化版本 |
+| `type` | 是 | 宿主支持的挂载类型 |
+| `entry` | 否 | 相对插件目录的入口脚本；路径不能包含目录穿越 |
+| `permissions` | 否 | 只声明真正需要的宿主能力 |
+| `config` | 否 | 配置字段数组，支持 `text`、`secret`、`number`、`boolean` |
 
-### 插件类型（type）
+当前宿主支持的权限包括：
 
-| type | 挂载点 | 说明 |
-|---|---|---|
-| `literature-enhancer` | 文献详情页 | 在文献信息名称下方注入内容（如期刊等级信息） |
+| 权限 | 说明 |
+|---|---|
+| `storage` | 读写当前插件自己的数据目录 |
+| `network` | 使用宿主受限网络代理 |
+| `literature` | 读取当前文献非敏感元数据 |
+| `pdf-input` | 接收宿主传入的 PDF |
+| `process` | 启动本地进程，高风险 |
 
-> 未来可扩展 `assistant-tool`（AI 助手工具）、`reader-panel`（阅读面板）等。
+权限必须由宿主桥接层校验，不能只依靠前端隐藏按钮。
 
-## 三、入口脚本（main.js）
+## 三、入口脚本和桥接 API
 
-入口脚本以 IIFE 形式编写，接收受限桥接对象 `SgelinPlugin`：
+入口脚本使用 IIFE，并接收宿主传入的 `SgelinPlugin`：
 
 ```javascript
 (function (SgelinPlugin) {
   "use strict";
-  // 插件逻辑
+  SgelinPlugin.onRender(function (paper) {
+    SgelinPlugin.setDetailBadge("已加载");
+  });
 })(SgelinPlugin);
 ```
 
-### 桥接对象 API（SgelinPlugin）
+常用 API：
 
-| 方法 | 返回 | 说明 |
-|---|---|---|
-| `SgelinPlugin.id` | string | 插件 id |
-| `SgelinPlugin.getCurrentPaper()` | object | 当前文献 `{topic, id, title, journal, year, author, ...}` |
-| `SgelinPlugin.httpGet(url)` | Promise | 发起 GET 请求（宿主代理，避免 CORS），返回 `{ok, status, body}` |
-| `SgelinPlugin.getConfig()` | object | 读取插件自身配置值（key → value） |
-| `SgelinPlugin.readFile(fileName)` | Promise | 读取插件数据目录下的文件，返回 `{ok, exists, content}` |
-| `SgelinPlugin.writeFile(fileName, content)` | Promise | 写入插件数据目录下的文件，返回 `{ok}` |
-| `SgelinPlugin.setDetailBadge(html)` | void | 在文献详情页注入 HTML |
-| `SgelinPlugin.onRender(fn)` | void | 注册渲染钩子（每次切换文献时调用） |
-| `SgelinPlugin.saveConfig(values)` | Promise | 保存插件自身配置（key → value），供插件自渲染配置界面调用 |
-| `SgelinPlugin.setConfigRenderer(fn)` | void | 注册配置界面渲染函数 `fn(container, api)`（配置界面由插件自己显示，打开插件详情时宿主调用） |
+| API | 说明 |
+|---|---|
+| `id` | 当前插件 ID |
+| `getCurrentPaper()` | 当前文献元数据 |
+| `httpGet(url)` | 由宿主代理的受限 HTTPS GET |
+| `getConfig()` | 获取当前插件配置；`secret` 只返回脱敏值 |
+| `readFile(fileName)` | 读取插件数据目录文件 |
+| `writeFile(fileName, content)` | 写入插件数据目录文件 |
+| `setDetailBadge(html)` | 设置文献详情挂载内容 |
+| `onRender(fn)` | 注册文献切换回调 |
+| `saveConfig(values)` | 保存 manifest 已声明的配置 |
+| `setConfigRenderer(fn)` | 注册插件配置界面 |
 
-### 安全约束
+不要直接访问宿主 C# 内部对象、用户任意路径、注册表或系统命令。插件数据路径必须使用相对路径，宿主会拒绝目录穿越。
 
-- 插件脚本**不直接操作 DOM**，只能通过桥接对象访问能力。
-- 联网请求由宿主代理（`httpGet`），仅允许 http/https，防 SSRF。
-- 文件读写限定在**插件自己的数据目录**内（`user_data/plugins/<id>/`），防路径穿越。
-- 配置（如 secretKey）由宿主保存到插件目录 `config.json`，前端仅回显脱敏值。
+## 四、secret 配置
 
-## 四、插件数据持久化（缓存等）
+`type: "secret"` 的配置由宿主使用 Windows DPAPI 保存。插件前端只能得到脱敏值，不能依赖前端读取已保存的原始 Token。
 
-插件需要持久化数据（如查询缓存）时，**由插件自己实现**，使用通用的文件读写能力：
+开发要求：
 
-```javascript
-// 读取缓存
-SgelinPlugin.readFile("cache.json").then(function (res) {
-  var cache = {};
-  if (res.ok && res.exists && res.content) {
-    try { cache = JSON.parse(res.content) || {}; } catch (e) {}
+- 不把 Token 写入日志、Markdown、缓存、截图或 Git；
+- 不把 Token 拼入错误消息或普通 URL；
+- 更新 Token 时由用户重新输入；
+- API 适配器由宿主在进程内注入认证信息；
+- `process` 型插件收到配置时应按高风险受信执行处理。
+
+## 五、api 型插件
+
+`api` 型插件适合远程 PDF 服务。宿主负责 HTTPS、允许域名、SSRF 防护、上传大小、响应大小、超时、取消和轮询次数。
+
+多步骤服务应声明有限步骤，例如：
+
+```json
+{
+  "type": "pdf-parser",
+  "kind": "api",
+  "permissions": ["network", "pdf-input"],
+  "qualityLevel": 2,
+  "api": {
+    "endpoint": "https://api.example.com",
+    "allowedHosts": ["api.example.com"],
+    "steps": [
+      { "id": "submit", "method": "POST", "path": "/v1/parse" },
+      {
+        "id": "poll",
+        "method": "GET",
+        "path": "/v1/tasks/{taskId}",
+        "poll": { "intervalSeconds": 10, "timeoutSeconds": 600 }
+      }
+    ]
   }
-  // 使用 cache
-});
-
-// 写入缓存
-SgelinPlugin.writeFile("cache.json", JSON.stringify(cache));
+}
 ```
 
-> 主程序**不提供**「缓存」这类业务接口，只提供「读写插件数据目录文件」这一通用能力。插件自行决定存什么、怎么存（JSON、文本等）。
+不允许在 manifest 中执行任意 JavaScript、C#、shell 或无限制模板。远程响应最终必须映射为统一结果：
 
-## 五、开发一个插件的步骤
+```json
+{
+  "success": true,
+  "markdown": "# 标题",
+  "tables": [],
+  "warnings": []
+}
+```
 
-1. **创建插件目录**：在仓库下新建 `your-plugin/` 子文件夹。
-2. **编写 manifest.json**：声明 id、name、type、entry、permissions、config。
-3. **编写 main.js**：用 `SgelinPlugin` 桥接对象实现逻辑（如 `onRender` 钩子 + `setDetailBadge`）。
-4. **编写插件 README**：说明该插件的用途、配置、使用方式（面向该插件的使用者）。
-5. **打包**：把插件文件打成 `.zip`（含 manifest.json），供用户拖入软件安装。
-6. **提交到本仓库**：一个插件一个子文件夹。
+## 六、process 型插件
 
-## 六、安装 / 卸载 / 配置（用户侧）
+`process` 型插件适合本地 exe、Python 或其他解析器。它不是完整操作系统沙箱，只有在用户明确同意高风险执行后才能使用。
 
-- **安装**：拖入 `.zip` 到「🧩 插件」弹窗的虚线框。
-- **卸载**：插件列表点 🗑 删除（移除插件目录）。
-- **启用/禁用**：插件列表点 ⏸/▶ 切换。
-- **配置**：插件列表点 ⚙️ 打开设置表单（由 manifest 的 `config` 定义）。
+标准调用约定：
 
-## 七、开发建议
+```text
+<runtime> <entry> --input <pdf-path> --options <json-config>
+```
 
-1. **插件适配软件**：不要假设主程序内部结构，只依赖桥接对象 API。
-2. **最小权限**：`permissions` 只声明真正需要的。
-3. **自行持久化**：缓存、历史等数据用 `readFile` / `writeFile` 存到插件数据目录。
-4. **容错**：网络失败、无数据、配置缺失时给出友好提示（如 `setDetailBadge` 显示占位文案）。
-5. **限速**：外部 API 注意限速，用本地缓存减少重复请求。
+- exe 入口可以省略 runtime；Python 入口应声明 `runtime: "python"`；
+- stdout 只输出最终 UTF-8 JSON；
+- stderr 输出诊断信息；
+- 非零退出码、非法 JSON、超时、取消、输出过大都视为失败；
+- 宿主会终止整个进程树，但插件仍不得读取无关用户文件；
+- process 插件必须声明 `process` 和 `pdf-input` 权限。
+
+## 七、PDF 解析器统一结果
+
+PDF 解析器的统一结果字段：
+
+| 字段 | 说明 |
+|---|---|
+| `success` | 是否成功 |
+| `markdown` | Markdown 正文；成功时必须是非空字符串 |
+| `tables` | 可选表格数组 |
+| `warnings` | 部分识别失败或降级提示 |
+| `error` | 失败时包含 `code/message/retryable` |
+| `metadata` | 页数、解析器版本、模型版本等非敏感信息 |
+
+缓存身份应使用 PDF 内容 SHA-256、插件 ID、插件版本、质量等级和规范化配置哈希，不能只用 PDF 文件名。
+
+## 八、开发、打包和提交
+
+1. 在本地创建插件目录和源码文件。
+2. 编写 manifest 和入口脚本。
+3. 只使用声明的权限和桥接 API。
+4. 为空配置、网络失败、超时、非法响应、重复文献和大文件编写测试。
+5. 用 UTF-8 校验 manifest，并运行 JavaScript 语法检查。
+6. 将 manifest、入口和资源打成插件 zip。
+7. 在桌面版安装、启用、禁用、配置和卸载测试。
+8. 将**只有 zip 的插件目录**提交到本仓库。
+
+插件仓库不接收：源码、插件专属 README、用户说明、Token、缓存、日志、测试输出和临时文件。
+
+## 九、与 PDF 专项指南的关系
+
+本 README 是适用于 `literature-enhancer`、`assistant-tool`、`reader-panel`、`pdf-parser` 等插件的通用开发说明。
+
+`PDF解析插件开发指南.md` 是本地保留的 PDF 解析专项设计文档，用于说明 `pdf-parser` 的质量等级、API 多步骤解析、统一结果和安全验收细节。它不上传插件仓库，也不限制其他类型插件采用各自的挂载点和结果契约。
 
 ## 开源协议
 

@@ -16,3 +16,11 @@ Thumbs.db
 # 编辑器
 .vscode/
 .idea/
+
+# 插件仓库只提交可安装 zip；源码、插件说明和本地打包文件仅保留在开发机
+PDF解析插件开发指南.md
+pack.bat
+easyscholar-journal/*
+!easyscholar-journal/easyscholar-journal.zip
+minerU/*
+!minerU/minerU.zip
